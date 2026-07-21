@@ -24,7 +24,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
     // Wysyłka maila do Ciebie za pomocą Resend
     const data = await resend.emails.send({
       from: 'Sklep <onboarding@resend.dev>', // W przyszłości możesz tu podpiąć swoją domenę
-      to: ['koalawoodstore@gmail.com'],
+      to: ['koalawoodstore3@gmail.com'],
       subject: `Nowe zapytanie o produkt z logo: ${Produkt}`,
       html: `
         <h2>Nowe zapytanie z formularza produktu</h2>
