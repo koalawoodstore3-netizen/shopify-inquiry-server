@@ -29,7 +29,8 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
   let filePath = null;
 
   try {
-    const { email, ilosc, Produkt, firma_imie } = req.body;
+    // Dodano odebranie zmiennej dodatkowe_informacje z req.body
+    const { email, ilosc, Produkt, firma_imie, dodatkowe_informacje } = req.body;
     const file = req.file;
 
     if (!email || !ilosc || !file || !firma_imie) {
@@ -42,7 +43,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
     // Odczytujemy plik z dysku tymczasowego do bufora dla Resend
     const fileBuffer = fs.readFileSync(filePath);
 
-    // Wysyłka maila za pomocą Resend z użyciem 'content' zamiast 'path'
+    // Wysyłka maila za pomocą Resend
     const data = await resend.emails.send({
       from: 'Sklep <onboarding@resend.dev>',
       to: ['koalawoodstore@gmail.com'],
@@ -53,6 +54,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
         <p><strong>Firma / Imię:</strong> ${firma_imie}</p>
         <p><strong>E-mail klienta:</strong> ${email}</p>
         <p><strong>Ilość sztuk:</strong> ${ilosc}</p>
+        <p><strong>Dodatkowe informacje:</strong> ${dodatkowe_informacje ? dodatkowe_informacje : 'Brak'}</p>
         <p>W załączniku znajduje się plik z logo przesłany przez klienta.</p>
       `,
       attachments: [
