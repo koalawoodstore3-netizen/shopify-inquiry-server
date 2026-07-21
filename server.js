@@ -39,7 +39,10 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
 
     filePath = file.path;
 
-    // Wysyłka maila do Ciebie za pomocą Resend z użyciem ścieżki do pliku z dysku
+    // Odczytujemy plik z dysku tymczasowego do bufora dla Resend
+    const fileBuffer = fs.readFileSync(filePath);
+
+    // Wysyłka maila za pomocą Resend z użyciem 'content' zamiast 'path'
     const data = await resend.emails.send({
       from: 'Sklep <onboarding@resend.dev>',
       to: ['koalawoodstore@gmail.com'],
@@ -55,7 +58,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
       attachments: [
         {
           filename: file.originalname,
-          path: filePath,
+          content: fileBuffer,
         },
       ],
     });
@@ -66,7 +69,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
     console.error('Błąd podczas wysyłania:', error);
     res.status(500).send('Wystąpił błąd podczas wysyłania wiadomości.');
   } finally {
-    // BEZWZGLĘDNE USUWANIE PLIKU Z DYKU PO WYSŁANIU (lub w razie błędu)
+    // BEZWZGLĘDNE USUWANIE PLIKU Z DYSKU PO WYSŁANIU (lub w razie błędu)
     if (filePath && fs.existsSync(filePath)) {
       try {
         fs.unlinkSync(filePath);
