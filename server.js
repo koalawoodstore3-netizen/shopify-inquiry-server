@@ -7,7 +7,7 @@ const app = express();
 const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // Limit pliku np. 10MB
 
 // Konfiguracja Resend (darmowe API do wysyłki e-maili z załącznikami)
-const resend = new Resend('TUTAJ_WKLEJ_SWÓJ_KLUCZ_API_Z_RESEND');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
