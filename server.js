@@ -7,7 +7,7 @@ const path = require('path');
 
 const app = express();
 
-// Konfiguracja folderu tymczasowego na pliki (zapobiega zapychanju pamięci RAM)
+// Konfiguracja folderu tymczasowego na pliki
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)){
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -29,40 +29,61 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
   let filePath = null;
 
   try {
-    // Dodano odebranie zmiennej dodatkowe_informacje z req.body
-    const { email, ilosc, Produkt, firma_imie, dodatkowe_informacje } = req.body;
+    // Odbieramy wszystkie pola przesłane przez nowy formularz kalkulatora
+    const { 
+      email, 
+      ilosc, 
+      Produkt, 
+      firma_imie, 
+      dodatkowe_informacje, 
+      logo_opcja, 
+      opcja_boczna, 
+      nadruk_klawisze, 
+      szacowana_cena 
+    } = req.body;
+    
     const file = req.file;
 
-    if (!email || !ilosc || !file || !firma_imie) {
+    // Walidacja podstawowych pól
+    if (!email || !ilosc || !firma_imie || !Produkt) {
       if (file) fs.unlinkSync(file.path);
-      return res.status(400).send('Brak wymaganych pól lub pliku.');
+      return res.status(400).send('Brak wymaganych pól.');
     }
 
-    filePath = file.path;
+    // Jeśli klient wybrał opcję z logo, plik staje się wymagany na serwerze
+    if (logo_opcja === 'tak' && !file) {
+      return res.status(400).send('Wymagany plik z logo.');
+    }
 
-    // Odczytujemy plik z dysku tymczasowego do bufora dla Resend
-    const fileBuffer = fs.readFileSync(filePath);
+    if (file) {
+      filePath = file.path;
+    }
 
-    // Wysyłka maila za pomocą Resend
+    const fileBuffer = filePath ? fs.readFileSync(filePath) : null;
+    const attachments = fileBuffer ? [{ filename: file.originalname, content: fileBuffer }] : [];
+
+    // Wysyłka maila za pomocą Resend zawierającego pełną specyfikację zamówienia
     const data = await resend.emails.send({
       from: 'Sklep <onboarding@resend.dev>',
       to: ['koalawoodstore@gmail.com'],
-      subject: `Nowe zapytanie: ${Produkt} (${firma_imie})`,
+      subject: `Nowa wycena / zamówienie: ${Produkt} (${firma_imie})`,
       html: `
-        <h2>Nowe zapytanie o wycenę z logo</h2>
-        <p><strong>Produkt:</strong> ${Produkt}</p>
+        <h2>Nowe zapytanie z zaawansowanego kalkulatora</h2>
+        <p><strong>Wybrany produkt:</strong> ${Produkt}</p>
         <p><strong>Firma / Imię:</strong> ${firma_imie}</p>
         <p><strong>E-mail klienta:</strong> ${email}</p>
-        <p><strong>Ilość sztuk:</strong> ${ilosc}</p>
-        <p><strong>Dodatkowe informacje:</strong> ${dodatkowe_informacje ? dodatkowe_informacje : 'Brak'}</p>
-        <p>W załączniku znajduje się plik z logo przesłany przez klienta.</p>
+        <p><strong>Potrzebna ilość:</strong> ${ilosc} szt.</p>
+        <hr/>
+        <h3>Szczegóły konfiguracji:</h3>
+        <p><strong>Własne logo:</strong> ${logo_opcja === 'tak' ? 'Tak (+1.50 zł/szt.)' : 'Nie'}</p>
+        <p><strong>Opcja boczna (symbol/tekst):</strong> ${opcja_boczna === 'wypukly' ? 'Wypukły' : opcja_boczna === 'wklesly' ? 'Wklęsły' : 'Brak'}</p>
+        <p><strong>Nadruk na klawisze:</strong> ${nadruk_klawisze === 'tak' ? 'Tak' : 'Nie'}</p>
+        <p><strong>Szacowana wartość netto ogółem:</strong> ${szacowana_cena || 'Brak'}</p>
+        <p><strong>Dodatkowe informacje od klienta:</strong> ${dodatkowe_informacje || 'Brak'}</p>
+        <hr/>
+        <p>${file ? 'W załączniku znajduje się plik graficzny z logo przesłany przez klienta.' : 'Klient nie dołączał pliku z logo.'}</p>
       `,
-      attachments: [
-        {
-          filename: file.originalname,
-          content: fileBuffer,
-        },
-      ],
+      attachments: attachments,
     });
 
     res.status(200).send('Wysłano pomyślnie');
@@ -71,7 +92,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
     console.error('Błąd podczas wysyłania:', error);
     res.status(500).send('Wystąpił błąd podczas wysyłania wiadomości.');
   } finally {
-    // BEZWZGLĘDNE USUWANIE PLIKU Z DYSKU PO WYSŁANIU (lub w razie błędu)
+    // Czyszczenie pliku tymczasowego
     if (filePath && fs.existsSync(filePath)) {
       try {
         fs.unlinkSync(filePath);
