@@ -66,6 +66,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
     const data = await resend.emails.send({
       from: 'Sklep <onboarding@resend.dev>',
       to: ['koalawoodstore@gmail.com'],
+      replyTo: email, // <--- TUTAJ DODANO: Ustawia adres e-mail klienta jako docelowy przy odpowiedzi
       subject: `Nowa wycena / zamówienie: ${Produkt} (${firma_imie})`,
       html: `
         <h2>Nowe zapytanie z zaawansowanego kalkulatora</h2>
