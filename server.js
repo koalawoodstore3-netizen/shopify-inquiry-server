@@ -29,7 +29,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
   let filePath = null;
 
   try {
-    // Odbieramy wszystkie pola przesłane przez nowy formularz kalkulatora
+    // Odbieramy wszystkie pola przesłane przez formularz kalkulatora
     const { 
       email, 
       ilosc, 
@@ -44,16 +44,14 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
     
     const file = req.file;
 
-    // Walidacja podstawowych pól
+    // Walidacja podstawowych pól tekstowych
     if (!email || !ilosc || !firma_imie || !Produkt) {
       if (file) fs.unlinkSync(file.path);
       return res.status(400).send('Brak wymaganych pól.');
     }
 
-    // Jeśli klient wybrał opcję z logo, plik staje się wymagany na serwerze
-    if (logo_opcja === 'tak' && !file) {
-      return res.status(400).send('Wymagany plik z logo.');
-    }
+    // UWAGA: Usunięto walidację wymagającą pliku przy logo_opcja === 'tag'
+    // Plik jest teraz w 100% opcjonalny.
 
     if (file) {
       filePath = file.path;
@@ -66,7 +64,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
     const data = await resend.emails.send({
       from: 'Sklep <onboarding@resend.dev>',
       to: ['koalawoodstore@gmail.com'],
-      replyTo: email, // <--- TUTAJ DODANO: Ustawia adres e-mail klienta jako docelowy przy odpowiedzi
+      replyTo: email, // Ustawia adres e-mail klienta jako docelowy przy odpowiedzi
       subject: `Nowa wycena / zamówienie: ${Produkt} (${firma_imie})`,
       html: `
         <h2>Nowe zapytanie z zaawansowanego kalkulatora</h2>
@@ -76,7 +74,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
         <p><strong>Potrzebna ilość:</strong> ${ilosc} szt.</p>
         <hr/>
         <h3>Szczegóły konfiguracji:</h3>
-        <p><strong>Własne logo:</strong> ${logo_opcja === 'tak' ? 'Tak (+1.50 zł/szt.)' : 'Nie'}</p>
+        <p><strong>Własne logo:</strong> ${logo_opcja === 'tak' ? 'Tak' : 'Nie'}</p>
         <p><strong>Opcja boczna (symbol/tekst):</strong> ${opcja_boczna === 'wypukly' ? 'Wypukły' : opcja_boczna === 'wklesly' ? 'Wklęsły' : 'Brak'}</p>
         <p><strong>Nadruk na klawisze:</strong> ${nadruk_klawisze === 'tak' ? 'Tak' : 'Nie'}</p>
         <p><strong>Szacowana wartość netto ogółem:</strong> ${szacowana_cena || 'Brak'}</p>
