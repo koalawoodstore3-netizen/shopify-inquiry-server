@@ -29,29 +29,14 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
   let filePath = null;
 
   try {
-    // Odbieramy wszystkie pola przesłane przez formularz kalkulatora
-    const { 
-      email, 
-      ilosc, 
-      Produkt, 
-      firma_imie, 
-      dodatkowe_informacje, 
-      logo_opcja, 
-      opcja_boczna, 
-      nadruk_klawisze, 
-      szacowana_cena 
-    } = req.body;
-    
+    const { email, ilosc, Produkt, firma_imie } = req.body;
     const file = req.file;
 
-    // Walidacja podstawowych pól tekstowych
+    // Walidacja najważniejszych pól wymaganych
     if (!email || !ilosc || !firma_imie || !Produkt) {
       if (file) fs.unlinkSync(file.path);
       return res.status(400).send('Brak wymaganych pól.');
     }
-
-    // UWAGA: Usunięto walidację wymagającą pliku przy logo_opcja === 'tag'
-    // Plik jest teraz w 100% opcjonalny.
 
     if (file) {
       filePath = file.path;
@@ -60,7 +45,29 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
     const fileBuffer = filePath ? fs.readFileSync(filePath) : null;
     const attachments = fileBuffer ? [{ filename: file.originalname, content: fileBuffer }] : [];
 
-    // Wysyłka maila za pomocą Resend zawierającego pełną specyfikację zamówienia
+    // Słownik ładnych nazw dla znanych pól (opcjonalnie; nieznane pola wyświetlą się z oryginalną nazwą klucza)
+    const fieldLabels = {
+      email: 'E-mail klienta',
+      ilosc: 'Potrzebna ilość',
+      Produkt: 'Wybrany produkt',
+      firma_imie: 'Firma / Imię',
+      dodatkowe_informacje: 'Dodatkowe informacje',
+      logo_opcja: 'Własne logo',
+      opcja_boczna: 'Opcja boczna',
+      nadruk_klawisze: 'Nadruk na klawisze',
+      szacowana_cena: 'Szacowana wartość netto ogółem'
+    };
+
+    // Dynamiczne generowanie HTML dla wszystkich pól przesłanych w formularzu
+    let dynamicFieldsHtml = '';
+    for (const [key, value] of Object.entries(req.body)) {
+      if (value !== undefined && value !== null && value !== '') {
+        const label = fieldLabels[key] || key; // Używa ładnej etykiety lub nazwy klucza z formularza
+        dynamicFieldsHtml += `<p><strong>${label}:</strong> ${value}</p>`;
+      }
+    }
+
+    // Wysyłka maila za pomocą Resend zawierającego pełną specyfikację
     const data = await resend.emails.send({
       from: 'Sklep <onboarding@resend.dev>',
       to: ['koalawoodstore@gmail.com'],
@@ -68,17 +75,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
       subject: `Nowa wycena / zamówienie: ${Produkt} (${firma_imie})`,
       html: `
         <h2>Nowe zapytanie z zaawansowanego kalkulatora</h2>
-        <p><strong>Wybrany produkt:</strong> ${Produkt}</p>
-        <p><strong>Firma / Imię:</strong> ${firma_imie}</p>
-        <p><strong>E-mail klienta:</strong> ${email}</p>
-        <p><strong>Potrzebna ilość:</strong> ${ilosc} szt.</p>
-        <hr/>
-        <h3>Szczegóły konfiguracji:</h3>
-        <p><strong>Własne logo:</strong> ${logo_opcja === 'tak' ? 'Tak' : 'Nie'}</p>
-        <p><strong>Opcja boczna (symbol/tekst):</strong> ${opcja_boczna === 'wypukly' ? 'Wypukły' : opcja_boczna === 'wklesly' ? 'Wklęsły' : 'Brak'}</p>
-        <p><strong>Nadruk na klawisze:</strong> ${nadruk_klawisze === 'tak' ? 'Tak' : 'Nie'}</p>
-        <p><strong>Szacowana wartość netto ogółem:</strong> ${szacowana_cena || 'Brak'}</p>
-        <p><strong>Dodatkowe informacje od klienta:</strong> ${dodatkowe_informacje || 'Brak'}</p>
+        ${dynamicFieldsHtml}
         <hr/>
         <p>${file ? 'W załączniku znajduje się plik graficzny z logo przesłany przez klienta.' : 'Klient nie dołączał pliku z logo.'}</p>
       `,
