@@ -70,7 +70,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
     // Wysyłka maila za pomocą Resend zawierającego pełną specyfikację
     const data = await resend.emails.send({
       from: 'Sklep <onboarding@resend.dev>',
-      to: ['koalawoodstore@gmail.com'],
+      to: ['info@koala-wood.com'],
       replyTo: email, // Ustawia adres e-mail klienta jako docelowy przy odpowiedzi
       subject: `Nowa wycena / zamówienie: ${Produkt} (${firma_imie})`,
       html: `
