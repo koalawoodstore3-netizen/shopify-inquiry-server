@@ -62,9 +62,9 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
       szacowana_cena: 'Szacowana wartość netto ogółem'
     };
 
-    // Sprawdzenie kategorii w sposób niezależny od języka
+    // Sprawdzenie kategorii w sposób niezależny od języka + zabezpieczenie po obecności pola głośności suwaka
     const categoryValue = (kategoria || '').toLowerCase();
-    const isSlider = categoryValue.includes('slider') || categoryValue.includes('suwak');
+    const isSlider = categoryValue.includes('slider') || categoryValue.includes('suwak') || Boolean(req.body.glosnosc_suwaka);
 
     // Dynamiczne generowanie HTML dla wszystkich pól przesłanych w formularzu
     let dynamicFieldsHtml = '';
