@@ -29,7 +29,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
   let filePath = null;
 
   try {
-    const { email, ilosc, Produkt, firma_imie } = req.body;
+    const { email, ilosc, Produkt, firma_imie, kategoria } = req.body;
     const file = req.file;
 
     // Walidacja najważniejszych pól wymaganych
@@ -45,7 +45,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
     const fileBuffer = filePath ? fs.readFileSync(filePath) : null;
     const attachments = fileBuffer ? [{ filename: file.originalname, content: fileBuffer }] : [];
 
-    // Słownik ładnych nazw dla znanych pól (opcjonalnie; nieznane pola wyświetlą się z oryginalną nazwą klucza)
+    // Słownik ładnych nazw dla wszystkich znanych pól z formularza
     const fieldLabels = {
       email: 'E-mail klienta',
       ilosc: 'Potrzebna ilość',
@@ -55,14 +55,26 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
       logo_opcja: 'Własne logo',
       opcja_boczna: 'Opcja boczna',
       nadruk_klawisze: 'Nadruk na klawisze',
+      glosnosc_przelacznikow: 'Głośność przełączników',
+      glosnosc_suwaka: 'Głośność suwaka',
+      sposob_montazu: 'Sposób montażu',
+      szacowana_cena_jednostkowa: 'Szacowana wartość netto za sztukę',
       szacowana_cena: 'Szacowana wartość netto ogółem'
     };
+
+    // Sprawdzenie kategorii w sposób niezależny od języka
+    const categoryValue = (kategoria || '').toLowerCase();
+    const isSlider = categoryValue.includes('slider') || categoryValue.includes('suwak');
 
     // Dynamiczne generowanie HTML dla wszystkich pól przesłanych w formularzu
     let dynamicFieldsHtml = '';
     for (const [key, value] of Object.entries(req.body)) {
-      if (value !== undefined && value !== null && value !== '') {
-        const label = fieldLabels[key] || key; // Używa ładnej etykiety lub nazwy klucza z formularza
+      if (value !== undefined && value !== null && value !== '' && key !== 'kategoria') {
+        // Jeśli to suwak, pomiń głośność przełączników; jeśli kliker, pomiń głośność suwaka
+        if (isSlider && key === 'glosnosc_przelacznikow') continue;
+        if (!isSlider && key === 'glosnosc_suwaka') continue;
+
+        const label = fieldLabels[key] || key;
         dynamicFieldsHtml += `<p><strong>${label}:</strong> ${value}</p>`;
       }
     }
