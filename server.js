@@ -47,6 +47,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
 
     // Słownik ładnych nazw dla wszystkich znanych pól z formularza
     const fieldLabels = {
+        zrodlo_zapytania: 'Źródło zapytania',
       email: 'E-mail klienta',
       ilosc: 'Potrzebna ilość',
       Produkt: 'Wybrany produkt',
