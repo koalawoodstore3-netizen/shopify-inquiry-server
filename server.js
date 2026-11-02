@@ -126,7 +126,7 @@ app.post('/log-email-view', upload.none(), async (req, res) => {
   const timestamp = new Date().toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' });
 
   // Pełny adres URL Aplikacji Internetowej Google Apps Script
-  const googleScriptUrl = 'https://script.google.com/macros/s/1SIaXdhSPWQeySxSKf1PyRyAf82fgD1c1yMdsUpasJT93qbtcH9cmOPkl/exec';
+  const googleScriptUrl = 'https://script.google.com/macros/s/AKfycbwYNmmdUu-03Uy8Ok478XU8XSraqr2KWRL7DfgZykXooskrTC1VoaUO_1rQ7x45p5lbdQ/exec';
 
   try {
     await fetch(googleScriptUrl, {
