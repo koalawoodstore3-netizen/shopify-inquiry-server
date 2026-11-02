@@ -14,8 +14,8 @@ if (!fs.existsSync(uploadDir)){
 }
 
 const upload = multer({ 
-  dest: 'uploads/',
-  limits: { fileSize: 10 * 1024 * 1024 } // Limit 10MB
+    dest: 'uploads/',
+    limits: { fileSize: 10 * 1024 * 1024 } // Limit 10MB
 });
 
 // Konfiguracja Resend
@@ -84,7 +84,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
     const data = await resend.emails.send({
       from: 'Sklep <info@koala-wood.com>',
       to: ['info@koala-wood.com'],
-    reply_to: email,
+      reply_to: email,
       replyTo: email, // Ustawia adres e-mail klienta jako docelowy przy odpowiedzi
       subject: `Nowa wycena / zamówienie: ${Produkt} (${firma_imie})`,
       html: `
@@ -112,6 +112,28 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
     }
   }
 });
+
+
+// ==========================================
+// NOWY ENDPOINT: Logowanie wyświetlenia pola e-mail
+// ==========================================
+app.post('/log-email-view', (req, res) => {
+  // Pobieranie prawdziwego adresu IP klienta z nagłówków Render.com
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const { produkt } = req.body;
+  const timestamp = new Date().toISOString(); // Pełna data i godzina
+  
+  // Format wpisu do pliku logów
+  const logEntry = `[${timestamp}] IP: ${clientIp} | Wyświetlono pole e-mail dla produktu: ${produkt}\n`;
+
+  // Zapis do pliku tekstowego na serwerze (plik email_field_views.log utworzy się sam)
+  fs.appendFile('email_field_views.log', logEntry, (err) => {
+    if (err) console.error('Błąd zapisu logu wyświetlenia e-mail:', err);
+  });
+
+  res.status(200).send({ success: true });
+});
+
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
