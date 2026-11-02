@@ -115,21 +115,33 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
 
 
 // ==========================================
-// NOWY ENDPOINT: Logowanie wyświetlenia pola e-mail
+// ENDPOINT: Wysyłanie IP i szczegółów do Arkusza Google
 // ==========================================
-app.post('/log-email-view', (req, res) => {
-  // Pobieranie prawdziwego adresu IP klienta z nagłówków Render.com
+app.post('/log-email-view', async (req, res) => {
   const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   const { produkt } = req.body;
-  const timestamp = new Date().toISOString(); // Pełna data i godzina
-  
-  // Format wpisu do pliku logów
-  const logEntry = `[${timestamp}] IP: ${clientIp} | Wyświetlono pole e-mail dla produktu: ${produkt}\n`;
+  const timestamp = new Date().toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' });
 
-  // Zapis do pliku tekstowego na serwerze (plik email_field_views.log utworzy się sam)
-  fs.appendFile('email_field_views.log', logEntry, (err) => {
-    if (err) console.error('Błąd zapisu logu wyświetlenia e-mail:', err);
-  });
+  // ⚠️ TUTAJ WKLEJ SWÓJ ADRES URL SKRYPTU GOOGLE (Web App URL)
+  const googleScriptUrl = '1SIaXdhSPWQeySxSKf1PyRyAf82fgD1c1yMdsUpasJT93qbtcH9cmOPkl';
+
+  try {
+    if (googleScriptUrl && googleScriptUrl !== '1SIaXdhSPWQeySxSKf1PyRyAf82fgD1c1yMdsUpasJT93qbtcH9cmOPkl') {
+      await fetch(googleScriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timestamp: timestamp,
+          ip: clientIp,
+          produkt: produkt || 'Nieznany'
+        })
+      });
+    } else {
+      console.log(`[LOG-EMAIL-VIEW] IP: ${clientIp} | Produkt: ${produkt} (Brak skonfigurowanego URL Google Sheets)`);
+    }
+  } catch (error) {
+    console.error('Błąd wysyłania do Google Sheets:', error);
+  }
 
   res.status(200).send({ success: true });
 });
