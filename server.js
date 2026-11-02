@@ -47,7 +47,7 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
 
     // Słownik ładnych nazw dla wszystkich znanych pól z formularza
     const fieldLabels = {
-        zrodlo_zapytania: 'Źródło zapytania',
+      zrodlo_zapytania: 'Źródło zapytania',
       email: 'E-mail klienta',
       ilosc: 'Potrzebna ilość',
       Produkt: 'Wybrany produkt',
@@ -117,28 +117,28 @@ app.post('/api/inquiry', upload.single('logo'), async (req, res) => {
 // ==========================================
 // ENDPOINT: Wysyłanie IP i szczegółów do Arkusza Google
 // ==========================================
-app.post('/log-email-view', async (req, res) => {
-  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+app.post('/log-email-view', upload.none(), async (req, res) => {
+  // Wyciągamy pierwszy (właściwy) adres IP klienta
+  const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+  const clientIp = rawIp.split(',')[0].trim();
+
   const { produkt } = req.body;
   const timestamp = new Date().toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' });
 
-  // ⚠️ TUTAJ WKLEJ SWÓJ ADRES URL SKRYPTU GOOGLE (Web App URL)
-  const googleScriptUrl = '1SIaXdhSPWQeySxSKf1PyRyAf82fgD1c1yMdsUpasJT93qbtcH9cmOPkl';
+  // Pełny adres URL Aplikacji Internetowej Google Apps Script
+  const googleScriptUrl = 'https://script.google.com/macros/s/1SIaXdhSPWQeySxSKf1PyRyAf82fgD1c1yMdsUpasJT93qbtcH9cmOPkl/exec';
 
   try {
-    if (googleScriptUrl && googleScriptUrl !== '1SIaXdhSPWQeySxSKf1PyRyAf82fgD1c1yMdsUpasJT93qbtcH9cmOPkl') {
-      await fetch(googleScriptUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          timestamp: timestamp,
-          ip: clientIp,
-          produkt: produkt || 'Nieznany'
-        })
-      });
-    } else {
-      console.log(`[LOG-EMAIL-VIEW] IP: ${clientIp} | Produkt: ${produkt} (Brak skonfigurowanego URL Google Sheets)`);
-    }
+    await fetch(googleScriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        timestamp: timestamp,
+        ip: clientIp,
+        produkt: produkt || 'Nieznany'
+      })
+    });
+    console.log(`[LOG-EMAIL-VIEW] Zapisano do Google Sheets -> IP: ${clientIp} | Produkt: ${produkt}`);
   } catch (error) {
     console.error('Błąd wysyłania do Google Sheets:', error);
   }
